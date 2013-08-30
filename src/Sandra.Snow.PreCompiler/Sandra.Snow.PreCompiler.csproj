@@ -152,7 +152,16 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Assemblies\CsQuery.dll" />
+    <EmbeddedResource Include="Assemblies\MarkdownSharp.dll" />
+    <EmbeddedResource Include="Assemblies\Nancy.dll" />
+    <EmbeddedResource Include="Assemblies\Nancy.Testing.dll" />
+    <EmbeddedResource Include="Assemblies\Nancy.ViewEngines.Markdown.dll" />
+    <EmbeddedResource Include="Assemblies\Nancy.ViewEngines.Razor.dll" />
+    <EmbeddedResource Include="Assemblies\Newtonsoft.Json.dll" />
+    <EmbeddedResource Include="Assemblies\System.Web.Razor.Unofficial.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <PropertyGroup>

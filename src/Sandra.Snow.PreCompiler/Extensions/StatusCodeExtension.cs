@@ -1,5 +1,6 @@
 ﻿namespace Sandra.Snow.PreCompiler.Extensions
 {
+    using System;
     using Exceptions;
     using Nancy;
     using Nancy.Testing;
@@ -9,6 +10,7 @@
     {
         public static void ThrowIfNotSuccessful(this HttpStatusCode code)
         {
+            Console.WriteLine("Status code = " + code);
             if (code != HttpStatusCode.OK)
             {
                 throw new FileProcessingException("Failed to generate some file...");
@@ -18,6 +20,7 @@
         public static void ThrowIfNotSuccessful(this BrowserResponse response, string fileName)
         {
             var body = response.Body.AsString();
+            //Console.WriteLine(body);
 
             //if (result.StatusCode != HttpStatusCode.OK)
             //Crappy check because Nancy returns 200 on a compilation error :(

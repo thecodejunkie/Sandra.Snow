@@ -10,6 +10,7 @@
     using Exceptions;
     using Extensions;
     using Models;
+    using Nancy;
     using Nancy.Testing;
     using Nancy.ViewEngines.Razor;
     using Nancy.ViewEngines.SuperSimpleViewEngine;
@@ -19,8 +20,79 @@
 
     public class Program
     {
+        static Program()
+        {
+            var excuting =
+                Assembly.GetExecutingAssembly();
+
+            // Handler that will be invoked when the appdomain attempts to resolve a dependency, but cant.
+            // Gives us the oppertunity to tell it which assembly to load from the embedded ones
+
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, arguments) =>
+            {
+                var requestedAssemblyName =
+                    arguments.Name.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).First();
+
+                Console.WriteLine("Request to resolve " + requestedAssemblyName);
+
+                var resourceName =
+                    string.Format("{0}.Assemblies.{1}.dll", typeof(Program).Namespace, requestedAssemblyName);
+
+                Console.WriteLine("Checking for it as " + resourceName);
+
+                var resourceStream =
+                    excuting.GetManifestResourceStream(resourceName);
+
+                if (resourceStream == null)
+                {
+                    Console.WriteLine("Couldn't find embedded resource " + resourceName);
+                    return null;
+                }
+
+                Console.WriteLine("Reading raw assembly data ");
+
+                var rawAssembly =
+                    new byte[resourceStream.Length];
+
+                resourceStream.Read(rawAssembly, 0, rawAssembly.Length);
+
+                Console.WriteLine("Loading the embedded resource");
+
+                return Assembly.Load(rawAssembly);
+            };
+
+            //
+            // For some reason CsQuery isn't loaded so for the time being I manually
+            // for it to be loaded
+            //
+
+            var resourceNames =
+                excuting.GetManifestResourceNames();
+
+            foreach (var resourceName in resourceNames)
+            {
+                if (resourceName.EndsWith("CsQuery.dll"))
+                {
+
+                    var resourceStream =
+                        excuting.GetManifestResourceStream(resourceName);
+
+                    var rawAssembly =
+                        new byte[resourceStream.Length];
+
+                    resourceStream.Read(rawAssembly, 0, rawAssembly.Length);
+
+                    Console.WriteLine("Loading the embedded resource " + resourceName);
+
+                    Assembly.Load(rawAssembly);
+                }
+            }
+        }
+
         private static void Main(string[] args)
         {
+            StaticConfiguration.DisableErrorTraces = false;
+
             Console.WriteLine("Sandra.Snow : " + DateTime.Now.ToString("HH:mm:ss") + " : Begin processing");
 
             try
@@ -86,7 +158,16 @@
                 TestModule.Settings = settings;
 
                 var browserComposer = new Browser(with =>
-                {
+                    {
+                        with.ApplicationStartup((container, pipelines) =>
+                            {
+                                pipelines.OnError += (ctx, ex) =>
+                                    {
+                                        Console.WriteLine(ex.ToString());
+                                        return null;
+                                    };
+                            });
+
                     with.Module<TestModule>();
                     with.RootPathProvider<StaticPathProvider>();
                     with.ViewEngines(typeof(SuperSimpleViewEngineWrapper), typeof(RazorViewEngine));
@@ -111,6 +192,12 @@
                 }
 
                 Console.WriteLine("Sandra.Snow : " + DateTime.Now.ToString("HH:mm:ss") + " : Finish processing");
+
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    Console.WriteLine(assembly.GetName().Name);
+                    //Console.WriteLine(assembly.FullName);
+                }
             }
             catch (Exception ex)
             {
